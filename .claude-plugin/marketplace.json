@@ -1,0 +1,13 @@
+{
+  "name": "model-router",
+  "owner": {
+    "name": "trungdongdblue"
+  },
+  "description": "model-router: a Claude Code mod that picks the model per session and the effort per prompt from how hard the prompt is.",
+  "plugins": [
+    {
+      "name": "model-router",
+      "source": "./"
+    }
+  ]
+}

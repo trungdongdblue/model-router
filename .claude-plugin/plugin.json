@@ -1,0 +1,98 @@
+{
+  "name": "model-router",
+  "version": "0.4.0",
+  "description": "Classify each prompt as easy/normal/hard, log token usage per step, and optionally adjust effort or model per tier",
+  "author": {
+    "name": "trungdongdblue",
+    "url": "https://github.com/trungdongdblue"
+  },
+  "userConfig": {
+    "mode": {
+      "type": "string",
+      "title": "Mode",
+      "description": "log: classify and log only, change nothing. route: apply the lever per tier.",
+      "options": [
+        "log",
+        "route"
+      ],
+      "default": "log"
+    },
+    "lever": {
+      "type": "string",
+      "title": "Lever",
+      "description": "both (recommended): model picked once per session from the first prompt, effort per prompt. effort: effort only. model: model only.",
+      "options": [
+        "effort",
+        "model",
+        "both"
+      ],
+      "default": "both"
+    },
+    "switchStyle": {
+      "type": "string",
+      "title": "How the model is switched",
+      "description": "visible: switch the session's model so /model and the footer show it; your saved setting is written back unchanged right away. silent: never touch the setting, send the model on each request. Sessions without a terminal UI always run silent.",
+      "options": [
+        "visible",
+        "silent"
+      ],
+      "default": "visible"
+    },
+    "easyEffort": {
+      "type": "string",
+      "title": "Effort for easy prompts",
+      "description": "Effort level sent for easy prompts.",
+      "options": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "default": "low"
+    },
+    "hardEffort": {
+      "type": "string",
+      "title": "Effort for hard prompts",
+      "description": "Effort level sent for hard prompts.",
+      "options": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "default": "xhigh"
+    },
+    "easyModel": {
+      "type": "string",
+      "title": "Model for easy prompts",
+      "description": "Model for a session whose first prompt is easy.",
+      "default": "haiku"
+    },
+    "normalModel": {
+      "type": "string",
+      "title": "Model for normal sessions",
+      "description": "Model for a session whose first prompt is normal; empty keeps your own model (as /config shows it).",
+      "default": ""
+    },
+    "hardModel": {
+      "type": "string",
+      "title": "Model for hard prompts",
+      "description": "Model for hard prompts; empty keeps your own model (as /config shows it), e.g. opus[1m].",
+      "default": ""
+    },
+    "switchTurns": {
+      "type": "number",
+      "title": "Turns the model may switch in",
+      "description": "The session model follows each prompt only in its first N typed prompts; after that it is kept (a switch loses the prompt cache), except for escalation.",
+      "default": 1
+    },
+    "escalate": {
+      "type": "boolean",
+      "title": "Escalate within a session",
+      "description": "A session that started on a lighter model moves up when a later prompt is harder. It never moves down.",
+      "default": true
+    }
+  }
+}

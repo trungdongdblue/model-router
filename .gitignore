@@ -1,0 +1,6 @@
+# Per-session logs: they hold the prompts you typed
+logs/
+# Written by Claude Code when it loads the mod
+.claude-plugin/types/
+.DS_Store
+node_modules/
