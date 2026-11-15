@@ -1,6 +1,6 @@
 {
   "name": "model-router",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Classify each prompt as easy/normal/hard, log token usage per step, and optionally adjust effort or model per tier",
   "author": {
     "name": "trungdongdblue",
@@ -93,6 +93,12 @@
       "title": "Escalate within a session",
       "description": "A session that started on a lighter model moves up when a later prompt is harder. It never moves down.",
       "default": true
+    },
+    "guideSubagents": {
+      "type": "boolean",
+      "title": "Guide subagent model and effort",
+      "description": "route mode: send a short guide beside the session's first prompt so the main session picks each subagent's model and effort (search work on haiku/low, hard work on xhigh). Every Agent call is logged either way.",
+      "default": false
     }
   }
 }

@@ -62,8 +62,25 @@ claude --plugin-dir ./model-router \
 | `hardModel` | *(empty)* | Model for hard prompts; empty keeps your own |
 | `switchTurns` | `1` | How many first prompts may pick the model |
 | `escalate` | `true` | Move the session up when a later prompt is harder |
+| `guideSubagents` | `false` | Guide the main session to pick each subagent's model and effort (see below) |
 
 Example, effort only, models untouched: set `mode` to `route` and `lever` to `effort`.
+
+## Subagents
+
+On a large task the main session delegates work to subagents through the Agent tool. By default a subagent runs on the main session's model, so a file search on an Opus session runs on Opus. The main session can set a subagent's `model` and `effort` on each call, but rarely does unless asked.
+
+With `guideSubagents` on (and `mode: route`), the mod sends a short guide beside the session's first prompt, which the model reads and you do not see:
+
+| Delegated work | Model | Effort |
+|---|---|---|
+| Searching, locating files, reading code to report back | `haiku` | `low` |
+| Routine implementation or tests with a clear spec | unset (the session's) | unset |
+| Design, architecture, unclear debugging, judgment reviews, many-file changes | unset (the session's) | `xhigh` |
+
+The main session still decides: it has the context the mod lacks, and agent types with their own definitions are left alone. The mod never rewrites a subagent call; it logs each one (`subagent-call`: type, model, effort) so you can check the choices. In one test, a file search delegated to `Explore` ran on Haiku at effort low, and the run cost $0.155 against $0.276 without the guide.
+
+The guide goes with the first prompt rather than into the system prompt, because another plugin may answer the system prompt first; after `/clear` it is sent again.
 
 ## Where the switch shows
 

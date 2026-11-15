@@ -39,6 +39,19 @@ type Row = {
 
 const EFFORTS: readonly string[] = ['low', 'medium', 'high', 'xhigh', 'max']
 
+// Sent beside the session's first prompt with `guideSubagents`: the parent
+// picks each subagent's model and effort itself, from what it delegates. The
+// Agent tool sets `effort` only when instructions ask, which this is.
+export const SUBAGENT_GUIDE = `# Subagent model and effort
+
+When you start a subagent with the Agent tool, choose its model and effort from the work you delegate:
+
+- Searching, locating files, reading code to report back, simple lookups: set model "haiku" and effort "low".
+- Routine implementation or tests with a clear spec: leave model and effort unset.
+- Design, architecture, debugging with an unclear cause, reviews that need judgment, changes across many files: leave model unset and set effort "xhigh".
+
+Set these for general-purpose agents and for search agents such as Explore; leave both unset for other specialized agent types, whose definitions choose their own. When unsure, leave both unset. Never give a lighter model work whose result you cannot check.`
+
 export const register: Register = (on, options) => {
   const mode = String(options.mode ?? 'log') // log | route
   const lever = String(options.lever ?? 'both') // effort | model | both
@@ -53,6 +66,7 @@ export const register: Register = (on, options) => {
   const easyEffort = asEffort(options.easyEffort, 'low')
   const hardEffort = asEffort(options.hardEffort, 'xhigh')
   const switchTurns = Number(options.switchTurns ?? 1)
+  const guideSubagents = options.guideSubagents === true
   const usesModel = lever === 'model' || lever === 'both'
   const usesEffort = lever === 'effort' || lever === 'both'
   const routes = mode === 'route'
@@ -63,6 +77,7 @@ export const register: Register = (on, options) => {
   let sessionTier: Tier | undefined // the tier whose model this session runs on
   let current: string | undefined // the model the router has this session on
   let isKnown = false // the row and home have been read this session
+  let guideSent = false // the subagent guide went out with this conversation
   const row: Row = { owesRestore: false }
 
   const sink: Sink = {
@@ -96,6 +111,7 @@ export const register: Register = (on, options) => {
   }
 
   const resetForNewTask = () => {
+    guideSent = false // a cleared conversation no longer holds the guide
     mainTurns = 0
     sessionTier = undefined
     lastDecision = undefined
@@ -107,6 +123,32 @@ export const register: Register = (on, options) => {
     await writeLog($, sink, { mode, event: 'session.start', surface: e.surface, isInteractive, switchStyle: visible() ? 'visible' : 'silent' })
     return next(e)
   })
+
+  // The guide rides beside the session's first typed prompt, as context the
+  // model reads and the person does not see; it stays in the conversation,
+  // so it holds for the whole session. (A system-prompt section would be
+  // cleaner, but another plugin may answer prompt.compose before this one.)
+  on('prompt.submit', async ($, e, next) => {
+    if (!routes || !guideSubagents || guideSent || e.command !== undefined || e.isMeta === true) return next(e)
+    guideSent = true
+    await writeLog($, sink, { mode, event: 'subagent-guide', added: true })
+    return next({ ...e, context: [...(e.context ?? []), SUBAGENT_GUIDE] })
+  }).catch(($, e, next) => next(e)) // a failed guide never blocks the prompt
+
+  // Every subagent the parent starts, with the model and effort it chose:
+  // read only, so the log shows whether the guide is followed.
+  on('tool.call', { tool: 'Agent' }, async ($, e, next) => {
+    await writeLog($, sink, {
+      mode,
+      event: 'subagent-call',
+      subagentType: e.subagent_type ?? null,
+      description: e.description,
+      model: e.model ?? null,
+      effort: e.effort ?? null,
+      promptChars: e.prompt.length,
+    })
+    return next(e)
+  }).catch(($, e, next) => next(e)) // a failed log never blocks the call
 
   on('turn.start', async ($, e, next) => {
     if (e.agentId !== undefined) return next(e)
